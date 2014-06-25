@@ -45,7 +45,7 @@ int tempVariance = 2;					// how low does the temperature go before system kicks
 int buttonVoltage = 0;					// stores the raw button voltage
 int systemState = 0;					// variable to turn the system on or off
 int waitTime = 5;					// how long we wait before going on
-int relay = 2;                                          // the digital write pin for controlling the relay
+int relay = 2;                                          // relay controled by pin 
 
 float pad = 9850;                       // balance/pad resistor value, set this to
 float thermr = 10000;                   // thermistor nominal resistance
@@ -76,10 +76,10 @@ lcd.setCursor (0,0);					// Print a message to the LCD
 lcd.print("Current Temp:");
 lcd.setCursor (0,1);
 lcd.print("Target Temp:");
-
-setTime(1387061244);
-
 pinMode(relay, OUTPUT);
+digitalWrite(relay,0); //debug
+
+//setTime(1387061244);
 
 }
 
@@ -95,7 +95,6 @@ void loop() {
           lcd.setCursor (15,1);
           lcd.print("|");
           digitalWrite(relay, systemState);
-
         }
         else{
           systemState=0;
@@ -106,28 +105,28 @@ void loop() {
 
         //check for input from buttons
 	buttonVoltage = analogRead(0);
-          if (buttonVoltage < 100) { //right
+          if (buttonVoltage < 100) {
            //right button does nothing yet 
           }
-          else if (buttonVoltage < 200 && lastLoop != 'u' && lastLoop != 'd') { //up
+          else if (buttonVoltage < 200 && lastLoop != 'u' && lastLoop != 'd') {
                   targetTemp++;
                   lastLoop='u';      // this is to keep the temperature from changing rapidly while the button is held down
     		//fUp();
           }
-          else if (buttonVoltage < 400 && lastLoop != 'd' && lastLoop != 'u'){ //down
+          else if (buttonVoltage < 400 && lastLoop != 'd' && lastLoop != 'u'){
                   targetTemp--;
                   lastLoop='d';      // this is to keep the temperature from changing rapidly while the button is held down
     		//fDown();
           }
-          else if (buttonVoltage < 600){ //left
+          else if (buttonVoltage < 600){
             //left button does nothing yet
           }
-          else if (buttonVoltage < 800){ //status
-            currentTime = now();
+          else if (buttonVoltage < 800){
+/*            currentTime = now();
             lcd.clear();
             lcd.setCursor (1,0)
             lcd.print( hour(currentTime), ':', minute(currentTime));
-            lastLoop='t'
+            lastLoop='t' */
           }
           else{
             lastLoop = 'n';      // this is to keep the temperature from changing rapidly while the button is held down
