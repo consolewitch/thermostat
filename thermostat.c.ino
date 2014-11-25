@@ -30,7 +30,7 @@ select button selects between modes
 
 #include <math.h>						// include math library
 #include <LiquidCrystal.h> 				// include library for LCD
-#include <time.h>
+//#include <time.h>
 
 #define ThermistorPIN 1                 // Analog Pin 1
 
@@ -39,9 +39,9 @@ select button selects between modes
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 int count = 0;						// counter
 char lastLoop = 'z';
-int currentTemp = 65;					// current temperature
-int targetTemp = 65;					// set target temperature
-int tempVariance = 2;					// how low does the temperature go before system kicks back on
+int currentTemp = 20;					// current temperature
+int targetTemp = 24;					// set target temperature
+int tempVariance = 1;					// how low does the temperature go before system kicks back on
 int buttonVoltage = 0;					// stores the raw button voltage
 int systemState = 0;					// variable to turn the system on or off
 int waitTime = 5;					// how long we wait before going on
@@ -87,7 +87,6 @@ void loop() {
 
         //get current temperature
         currentTemp=Thermistor(analogRead(ThermistorPIN));
-	currentTemp = (currentTemp * 9.0)/ 5.0 + 32.0;                  // converts to  Fahrenheit
 
         //turn on / off heat
         if (currentTemp < (targetTemp - tempVariance)){
