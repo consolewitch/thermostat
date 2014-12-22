@@ -12,6 +12,8 @@ Contact: alex@sneaksneak.org, twitter: LogicalMethods
 
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+
+//initialize global variables
 int count = 0;                // counter
 char lastLoop = 'z';          // initialize lastLoop variable
 int lastCurrentTemp = 0;      // initialize lastCurrentTemp
@@ -27,8 +29,7 @@ float pad = 9850;             // balance/pad resistor value, set this to
 float thermr = 10000;         // thermistor nominal resistance
 boolean updateDisp = false;   // bool to specify if we're updating the screen this loop
 int stateChangeTime = 0;
-int inStateTime = 0;
-int minStateTime = 0;
+int minStateTime = 300;       // heater must stay in one state for at least 5 minutes
 
 
 float Thermistor(int RawADC) {
@@ -51,7 +52,7 @@ void displayDefault(int currentTemp, int targetTemp, boolean systemState) {
   lcd.setCursor (8,0);
   lcd.print(targetTemp);
   lcd.setCursor (11,0);
-  lcd.print('     ');
+  lcd.print("     ");
   lcd.setCursor (11,0);
   lcd.print(hour(t));
   lcd.print (':');
@@ -83,6 +84,7 @@ int displaySetTime(int needs_work) { // Display the time-setting system
   lastLoop='t' ;
 } 
 */
+
 int fUp(int tempChange) {           // Change the target temperature up one degree
   tempChange++; 
   return tempChange;
@@ -95,13 +97,15 @@ int fDown(int tempChange) {           // Change the target temperature down one 
 
 void fLeft() {            // Do something on left button
   adjustTime(+3600);
+  stateChangeTime=stateChangeTime+3600;
 }
 
 void fRight() {           // do something on right button
   adjustTime(+60);
+  stateChangeTime=stateChangeTime+60;
 }
 
-void timeShift() {        // shift the temperature during certain times of day
+int timeShift() {        // shift the temperature during certain times of day
 
 }
 
@@ -113,6 +117,9 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
+  setTime(1419204900-28800);   // set to current unix epoch time in seconds compensating for pst
+  stateChangeTime=now();
+  Serial.print(stateChangeTime);
 }
 
 
@@ -120,14 +127,22 @@ void loop() {
   //get current temperature
   currentTemp=Thermistor(analogRead(ThermistorPIN));
 
-  //turn on or off heat
-  if (currentTemp < (targetTemp - tempVariance)){
-    systemState=1;
-    digitalWrite(relay, !systemState);            // using ! (aka:not) because of the design of our pre-built relay
-  }
-  else{
-    systemState=0;
-    digitalWrite(relay, !systemState);            // using ! (aka:not) because of the design of our pre-built relay
+  if (now()-stateChangeTime >= minStateTime){
+    Serial.print("now: ");
+    Serial.print(now());
+    Serial.print("stateChangeTime: ");
+    Serial.print(stateChangeTime);
+    Serial.println(" ");
+    if (currentTemp < (targetTemp - tempVariance)){
+      systemState=1;                                // its too cold, turn on the heat.
+      digitalWrite(relay, !systemState);            // using ! (aka:not) because of the design of our pre-built relay
+      stateChangeTime=now();
+    }
+    else{
+      systemState=0;                                // its too warm, turn off the heat.
+      digitalWrite(relay, !systemState);            // using ! (aka:not) because of the design of our pre-built relay
+      stateChangeTime=now();
+    }
   }
 
   //check for input from buttons
@@ -175,14 +190,16 @@ void loop() {
     displayDefault(currentTemp,targetTemp,systemState);
     updateDisp=false;
   }
-  Serial.print(lastLoop);
   lastCurrentTemp=currentTemp;
+} //end loop function
 
 
-/*  
-  if (delay >= count) {
+
+/*
+  
+  if (inStateTime >= minStateTime) {
     //GET TEMPERATURE
-    if (targetTemp - tempVariance < currentTemp && offTime > minOffTime)
+    if (targetTemp - tempVariance < currentTemp && minStateTime > inStateTime)
       systemState = 1;      // if it's too cold, turn on the heat
       stateChangeTime = now();
     else if (currentTemp >= targetTemp)
@@ -195,6 +212,5 @@ void loop() {
     if (systemState = 1)
       runTime++;        // Count how long the system has been on THIS NEEDS WORK
   }
-*/
-  
-} //end loop function
+
+  */
