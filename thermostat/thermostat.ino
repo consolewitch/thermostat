@@ -198,6 +198,7 @@ boolean snark () {
       lcd.setCursor (1,0);
       lcd.print(snarkConfirm);
       lcd.setCursor(1, 16 - snarkCancel.length());
+      lcd.print(snarkCancel);
       
       //jp note: this is to read the response of the user (confirm or cancel), not sure if it works or not
       for(int i = 0; i < 60000; i++){
