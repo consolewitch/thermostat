@@ -30,6 +30,11 @@ int stateChangeTime = 0;
 int inStateTime = 0;
 int minStateTime = 0;
 
+//snark related global vars
+long snarkLastMill = 0;                 // The last (or first) time snark was triggered
+int snarkChance = 5;                    // Likelyhood of snark being triggered in percent (10 = 10%)
+long snarkTimeout = 5000000;             // Number of mills to wait before checking snark again
+
 
 float Thermistor(int RawADC) {
   long Resistance;  
@@ -105,6 +110,19 @@ void timeShift() {        // shift the temperature during certain times of day
 
 }
 
+//Averages analog reads with a definable count and delay
+//Example: Count = 100, DelayMills = 10 would read 100 times over 1000ms (1 second)
+float avgAnalogRead(int InputPin, int Count, int DelayMills){
+  float total = 0;
+  
+  for(int i = 0; i < Count; i++){
+    total += analogRead(InputPin);
+    delay(DelayMills);
+  }
+  
+  return total / Count;
+}
+
 void setup() {
   lcd.begin(16, 2);                                 // set up the LCD's number of columns and rows
   pinMode(relay, OUTPUT);
@@ -113,6 +131,102 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
+}
+
+boolean snark () {
+  //every now and then this function gives you some snark and the user has to choose to cancel or continue
+  
+  if((snarkLastMill + snarkTimeout) < millis()){
+    //Time to check for snark
+
+    if(random(100) < snarkChance){
+      //yes, it is snark time
+      int snarkChoice = random(10); //total choices + 1
+      
+      //default language - response should be 16 or less chars, and confim+cancel < 16 chars
+      String snarkResponse = " ";
+      String snarkConfirm = "Yeah";
+      String snarkCancel = "Forget it";
+      String snarkConfirmed = "Confirmed";
+      String snarkCanceled = "Cancelled";
+      
+      if(snarkChoice == 0){
+          snarkResponse = "You sure?";
+      } else if(snarkChoice == 1){
+          snarkResponse = "Error: Success!";
+          snarkConfirm = "Error";
+	  snarkCancel = "Success";
+      } else if(snarkChoice == 2){
+          snarkResponse = "Base are belong!";
+	  snarkConfirm = "Destroy";
+	  snarkCancel = "You say!";
+      } else if(snarkChoice == 3){
+          snarkResponse = "Gorblax commands";
+	  snarkConfirm = "It is";
+	  snarkCancel = "Destroy";		 
+      } else if(snarkChoice == 4){
+          snarkResponse = "The cost man!";
+ 	  snarkConfirm = "Im rich";
+	  snarkCancel = "Im poor";
+          snarkConfirmed = "Yeah, sure.";
+      } else if(snarkChoice == 5){
+          snarkResponse = "T' power Capt'n!";
+ 	  snarkConfirm = "Do it!";
+	  snarkCancel = "Klingons.";
+          snarkConfirmed = "Eye eye captain!";
+          snarkCanceled = "Damn skippy.";
+      } else if(snarkChoice == 6){
+          snarkResponse = "Its opposite day";
+ 	  snarkConfirm = "Yes";
+	  snarkCancel = "No";
+      } else if(snarkChoice == 7){
+          snarkResponse = "Its opposite day";
+ 	  snarkConfirm = "No";
+	  snarkCancel = "Yes";
+      } else if(snarkChoice == 8){
+         snarkResponse = "I frown on this";
+          snarkConfirmed = "Fine.";
+          snarkCanceled = "Good.";
+      } else if(snarkChoice == 9){
+         snarkResponse = "Fuck!";          
+      } //you can add more snark here
+
+      //print snark to console
+      lcd.clear();
+      lcd.setCursor (0,0);
+      lcd.print(snarkResponse);
+      lcd.setCursor (1,0);
+      lcd.print(snarkConfirm);
+      lcd.setCursor(1, 16 - snarkCancel.length());
+      lcd.print(snarkCancel);
+      
+      //jp note: this is to read the response of the user (confirm or cancel), not sure if it works or not
+      for(int i = 0; i < 60000; i++){
+        //Wait for response for 60 seconds
+		buttonVoltage = analogRead(0);
+        
+        if (buttonVoltage < 100) {
+          //right button pressed - confirm and exit lop
+		  delay(1000); //wait for button release
+          return true; 
+        } else if ((buttonVoltage > 400) && (buttonVoltage < 600)){
+          //left button pressed - cancel and exit loop
+		  delay(1000);
+          return false;
+        }
+      
+        delay(1);
+      }
+      
+      //user did not respond, cancel
+      return false;
+      
+    }
+
+  }
+
+  //remember the last time we checked for snark so that we don't do it too often
+  snarkLastMill = millis();
 }
 
 
