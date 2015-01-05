@@ -45,6 +45,7 @@ float Thermistor(int RawADC) {
 }
 
 void displayDefault(int currentTemp, int targetTemp, boolean systemState) {
+  lcd.clear;
   time_t t = now();
   //first line
   lcd.setCursor (0,0);
@@ -75,15 +76,19 @@ void displayDefault(int currentTemp, int targetTemp, boolean systemState) {
   
 }
 
-/*
-int displaySetTime(int needs_work) { // Display the time-setting system
-  int currentTime = now();
+void displaySetTime() {
   lcd.clear();
-  lcd.setCursor (1,0);
-  lcd.print( hour(currentTime), ':', minute(currentTime));
-  lastLoop='t' ;
-} 
-*/
+  lcd.setCursor (0,0);
+  lcd.print(year());
+  lcd.print("/");
+  lcd.print(month());
+  lcd.print("/");
+  lcd.print(day());
+  lcd.setCursor(0,1);
+  lcd.print(hour());
+  lcd.print(":");
+  lcd.print(minute());
+}
 
 int fUp(int tempChange) {           // Change the target temperature up one degree
   tempChange++; 
@@ -117,15 +122,19 @@ void setup() {
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
-  setTime(1419204900-28800);   // set to current unix epoch time in seconds compensating for pst
+//  setTime(1419204900-28800);   // set to current unix epoch time in seconds compensating for pst
   stateChangeTime=now();
   Serial.print(stateChangeTime);
 }
 
-
 void loop() {
   //get current temperature
   currentTemp=Thermistor(analogRead(ThermistorPIN));
+  
+  if (now() <1000) {
+    displaySetTime();
+    updateDisp=false;
+  } 
 
   if (now()-stateChangeTime >= minStateTime){
     Serial.print("now: ");
