@@ -8,6 +8,7 @@ Contact: alex@sneaksneak.org, twitter: LogicalMethods
 #include <math.h>                 // include math library
 #include <LiquidCrystal.h>        // include library for LCD
 #include <Time.h>                 // include time library
+#include <TimeLib.h>              // include time library
 
 
 // initialize the library with the numbers of the interface pins
@@ -105,7 +106,7 @@ void displaySetTime() {
 
 void fUp() {           // Change the target temperature up one degree
     switch (displayMode) {
-    case 's':
+    case 's': //set time mode
       Serial.print("date pointer: ");
       Serial.print(setDatePointer%5);
       Serial.print("\n");
@@ -195,7 +196,9 @@ void fDown() {           // Change the target temperature down one degree
 void fLeft() {            // Do something on left button
     switch (displayMode) {
     case 's':
-      setDatePointer--;
+      if (setDatePointer > 0) {
+          setDatePointer--;
+      }
       break;
     case 'd':
       ;
@@ -208,7 +211,9 @@ void fLeft() {            // Do something on left button
 void fRight() {           // do something on right button
     switch (displayMode) {
     case 's':
-      setDatePointer++;
+      if (setDatePointer < 4) {
+          setDatePointer++;
+      }
       break;
     case 'd':
       ;//right doesn't do anything in display mode
@@ -366,41 +371,39 @@ boolean snark () {
 char newButton(){
   //check for input from buttons
   buttonVoltage = analogRead(0);
-  if (buttonVoltage < 100 && lastLoop != 'u' && lastLoop != 'd' && lastLoop != 'l' && lastLoop != 'r' && lastLoop != 's') { //right button
-    lastLoop = 'r';
-    return 'r';
+  Serial.println(buttonVoltage);
+
+  char thisLoop = 'x';
+  
+  if(buttonVoltage < 100){
+    thisLoop = 'r';  
+  } else if (buttonVoltage < 200){
+    thisLoop = 'u';
+  } else if (buttonVoltage < 400){
+    thisLoop = 'd';    
+  } else if (buttonVoltage < 600){
+    thisLoop = 'l';
+  } else if (buttonVoltage < 800){
+    thisLoop = 's';
   }
-  else if (buttonVoltage < 200 && lastLoop != 'u' && lastLoop != 'd' && lastLoop != 'l' && lastLoop != 'r' && lastLoop != 's') { //up button
-    lastLoop='u';     // this prevents the system from registering repeated presses 
-    return 'u';
-  }
-  else if (buttonVoltage < 400 && lastLoop != 'd' && lastLoop != 'u' && lastLoop != 'l' && lastLoop != 'r' && lastLoop != 's'){ //down button
-    lastLoop='d';      // this prevents the system from registering repeated presses 
-    return 'd';
-  }
-  else if (buttonVoltage < 600 && lastLoop != 'd' && lastLoop != 'u' && lastLoop != 'r' && lastLoop != 'l' && lastLoop != 's'){ //left button
-    lastLoop = 'l';       // this prevents the system from registering repeated presses
-    return 'l';
-  }
-  else if (buttonVoltage < 800 && lastLoop != 'd' && lastLoop != 'u' && lastLoop != 'l' && lastLoop != 'r' && lastLoop != 's'){ //select button
-    lastLoop = 's';       // this prevents the system from registering repeated presses
-    return 's';
-  }
-  else if (buttonVoltage <1000) {
-    //allow button press to escape without changing the lastLoop var.
-  }
-  else {
-    lastLoop = 'n';      // this prevents the system from registering repeated presses
+
+  bool valueChanged = thisLoop != lastLoop;
+  lastLoop = thisLoop;
+  
+  if(valueChanged){
+    return thisLoop;    
+  } else {
+    return 'n';
   }
 }
 
 void loop() {
-  char choice=newButton();      //keeps the button activity for this loop
+    char choice=newButton();      //keeps the button activity for this loop
 
   //get current temperature
   currentTemp=Thermistor(analogRead(ThermistorPIN));
-  
-  if (now() <1000) {
+
+  if (now() < 10000) {
     displayMode='s'; 
   } 
 
@@ -444,7 +447,7 @@ void loop() {
     }
   }
   
-  if (updateDisp || lastCurrentTemp != currentTemp){
+  if (updateDisp || (lastCurrentTemp != currentTemp)){
     if (displayMode == 's'){
       displaySetTime();
     }
@@ -455,7 +458,6 @@ void loop() {
   }
   lastCurrentTemp=currentTemp;
   lastDisplayMode=displayMode;
-
 } //end loop function
 
 
